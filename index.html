@@ -444,19 +444,25 @@ function drawChart(){
   mpts.forEach(function(mp,k){if(k<mpts.length-1||DL){var x=X(mp.d),y=Y(mp.v);s+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="4" fill="#fff" stroke="#000" stroke-width="2"/>';}});
   /* 标签：起点、各月点（3 位小数 + ret）、终点（4 位小数大彩点） */
   mpts.forEach(function(mp,k){var x=X(mp.d),y=Y(mp.v),t=mp.v.toFixed(3),bw=68,bh=22,r=MS[k].ret;
-    if(k===0){s+='<rect x="'+(x-2).toFixed(1)+'" y="'+(y-32).toFixed(1)+'" width="'+bw+'" height="'+bh+'" fill="#000"/><text x="'+(x-2+bw/2).toFixed(1)+'" y="'+(y-16).toFixed(1)+'" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">'+t+'</text>';}
-    else if(k===mpts.length-1&&!DL){/* 终点由下面统一画 */}
+    var lastMk=mpts.length-1, endNear=DL&&k===lastMk&&Math.abs(X(lastP.d)-x)<90;
+    var nearStart=k===1&&!narrow&&Math.abs(x-X(mpts[0].d))<90;
+    if(k===0){var ax=x-2;s+='<rect x="'+ax.toFixed(1)+'" y="'+(y-32).toFixed(1)+'" width="'+bw+'" height="'+bh+'" fill="#000"/><text x="'+(ax+bw/2).toFixed(1)+'" y="'+(y-16).toFixed(1)+'" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">'+t+'</text>';}
+    else if(k===lastMk&&!DL){/* 终点由下面统一画 */}
+    else if(endNear){/* 紧邻终点：只保留上方数值，月收益标签让位给终点 4 位标签 */}
+    else if(nearStart){/* 紧邻起点：数值右移到起点黑标签之后，避免被压 */}
     else if(!narrow||k===peakIdx){s+='<text x="'+x.toFixed(1)+'" y="'+(y-11).toFixed(1)+'" font-size="12" font-weight="'+(r<0?'700':'400')+'" fill="'+(r<0?'var(--dn)':'#000')+'" text-anchor="middle">'+t+'</text>';}
-    if(k>0&&k!==mpts.length-1){
+    if(nearStart){s+='<text x="'+(x+bw/2+12).toFixed(1)+'" y="'+(y-11).toFixed(1)+'" font-size="12" font-weight="'+(r<0?'700':'400')+'" fill="'+(r<0?'var(--dn)':'#000')+'" text-anchor="start">'+t+'</text>';}
+    if(k>0&&k!==lastMk){
       if(!narrow){s+='<text x="'+x.toFixed(1)+'" y="'+(y+24).toFixed(1)+'" font-size="12" fill="'+(r>=0?'var(--up)':'var(--dn)')+'" text-anchor="middle">'+pct(r*100,0)+'</text>';}
       else if(k===worstIdx){s+='<text x="'+(x+30).toFixed(1)+'" y="'+(y+4).toFixed(1)+'" font-size="12" font-weight="700" fill="var(--dn)" text-anchor="start">'+pct(r*100,0)+'</text>';}
       else if(r<0&&k%step===0){s+='<text x="'+x.toFixed(1)+'" y="'+(y+24).toFixed(1)+'" font-size="12" font-weight="700" fill="var(--dn)" text-anchor="middle">'+pct(r*100,0)+'</text>';}
     }});
-  /* 终点：大彩点 + 4 位小数标签（月点或日点） */
+  /* 终点：大彩点 + 4 位小数标签（月点或日点）。紧邻末月点时标签放终点右侧（padR 预留 100），避免压到月点数值 */
   var bw=68,bh=22;
   var xle=X(lastP.d),yle=Y(lastP.v);
   s+='<circle cx="'+xle.toFixed(1)+'" cy="'+yle.toFixed(1)+'" r="7" fill="'+col+'"/>';
-  var rx=xle-bw+2;s+='<rect x="'+rx.toFixed(1)+'" y="'+(yle-32).toFixed(1)+'" width="'+bw+'" height="'+bh+'" fill="'+col+'"/><text x="'+(rx+bw/2).toFixed(1)+'" y="'+(yle-16).toFixed(1)+'" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">'+lastP.v.toFixed(4)+'</text>';
+  var endLeft=mpts.length>1&&Math.abs(xle-X(mpts[mpts.length-1].d))<90;
+  var rx=endLeft?xle+10:xle-bw+2;s+='<rect x="'+rx.toFixed(1)+'" y="'+(yle-32).toFixed(1)+'" width="'+bw+'" height="'+bh+'" fill="'+col+'"/><text x="'+(rx+bw/2).toFixed(1)+'" y="'+(yle-16).toFixed(1)+'" font-size="13" font-weight="700" fill="#fff" text-anchor="middle">'+lastP.v.toFixed(4)+'</text>';
   s+='</svg>';box.innerHTML=s;
   heroHl(mi);
 }
